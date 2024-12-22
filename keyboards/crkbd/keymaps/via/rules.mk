@@ -3,3 +3,4 @@ VIA_ENABLE      = yes    # Enable VIA
 LTO_ENABLE      = yes
 RGBLIGHT_ENABLE = no
 RGB_MATRIX_ENABLE = yes
+CONSOLE_ENABLE = no
