@@ -1,6 +1,7 @@
 MOUSEKEY_ENABLE = no     # Mouse keys
-VIA_ENABLE      = yes    # Enable VIA
+VIA_ENABLE      = no    # Enable VIA
 LTO_ENABLE      = yes
 RGBLIGHT_ENABLE = no
-RGB_MATRIX_ENABLE = yes
-CONSOLE_ENABLE = no
+RGB_MATRIX_ENABLE = no
+CONSOLE_ENABLE = yes
+TAP_DANCE_ENABLE = yes
