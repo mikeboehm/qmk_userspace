@@ -19,23 +19,93 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 
 #include "oled.c"
+// #include "tapdances.h"
 
 
 // Tap Dance declarations
 enum {
     TD_Q,
     TD_SPACE,
-    TD_ESC_CAPS
+    TD_ESC_CAPS,
+    DANCE_V
 };
+
+enum {
+    SINGLE_TAP = 1,
+    SINGLE_HOLD,
+    DOUBLE_TAP,
+    DOUBLE_HOLD,
+    DOUBLE_SINGLE_TAP,
+    MORE_TAPS
+};
+
+typedef struct {
+    bool is_press_action;
+    uint8_t step;
+} tap;
+
+static tap dance_state[2];
+
+
+
+uint8_t dance_step(tap_dance_state_t *state);
+
+uint8_t dance_step(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) return SINGLE_TAP;
+        else return SINGLE_HOLD;
+    } else if (state->count == 2) {
+        if (state->interrupted) return DOUBLE_SINGLE_TAP;
+        else if (state->pressed) return DOUBLE_HOLD;
+        else return DOUBLE_TAP;
+    }
+    return MORE_TAPS;
+}
+
+void on_dance_0(tap_dance_state_t *state, void *user_data);
+void dance_0_finished(tap_dance_state_t *state, void *user_data);
+void dance_0_reset(tap_dance_state_t *state, void *user_data);
+
+void on_dance_0(tap_dance_state_t *state, void *user_data) {
+    if(state->count == 3) {
+        tap_code16(KC_V);
+        tap_code16(KC_V);
+        tap_code16(KC_V);
+    }
+    if(state->count > 3) {
+        tap_code16(KC_V);
+    }
+}
+
+void dance_0_finished(tap_dance_state_t *state, void *user_data) {
+    dance_state[1].step = dance_step(state);
+    switch (dance_state[1].step) {
+        case SINGLE_TAP: register_code16(KC_V); break;
+        case SINGLE_HOLD: register_code16(LGUI(KC_V)); break;
+        case DOUBLE_TAP: register_code16(KC_V); register_code16(KC_V); break;
+        case DOUBLE_SINGLE_TAP: tap_code16(KC_V); register_code16(KC_V);
+    }
+}
+
+void dance_0_reset(tap_dance_state_t *state, void *user_data) {
+    wait_ms(10);
+    switch (dance_state[1].step) {
+        case SINGLE_TAP: unregister_code16(KC_V); break;
+        case SINGLE_HOLD: unregister_code16(LGUI(KC_V)); break;
+        case DOUBLE_TAP: unregister_code16(KC_V); break;
+        case DOUBLE_SINGLE_TAP: unregister_code16(KC_V); break;
+    }
+    dance_state[1].step = 0;
+}
 
 // Tap Dance definitions
 tap_dance_action_t tap_dance_actions[] = {
     [TD_Q] = ACTION_TAP_DANCE_DOUBLE(KC_Q, LGUI(KC_Q)),
     [TD_SPACE] = ACTION_TAP_DANCE_DOUBLE(KC_SPC, LGUI(KC_SPC)),
     [TD_ESC_CAPS] = ACTION_TAP_DANCE_DOUBLE(KC_ESC, KC_CAPS),
+    // [DANCE_V] = ACTION_TAP_DANCE_DOUBLE(KC_V, LGUI(KC_V)),
+    [DANCE_V] = ACTION_TAP_DANCE_FN_ADVANCED(on_dance_0, dance_0_finished, dance_0_reset),
 };
-
-
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   // If console is enabled, it will print the matrix position and status of each key pressed
@@ -52,9 +122,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_TAB,    MT(MOD_LSFT,KC_A),    MT(MOD_LCTL,KC_R),    MT(MOD_LALT,KC_S),    MT(MOD_LGUI,KC_T),    KC_G,                         KC_M,    MT(MOD_LGUI | MOD_RGUI,KC_N),    MT(MOD_LALT,KC_E),    MT(MOD_LCTL | MOD_RCTL,KC_I), MT(MOD_LSFT | MOD_RSFT,KC_O), KC_QUOT,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-     TD(TD_ESC_CAPS),    KC_Z,    KC_X,    KC_C,    KC_D,    KC_V,                         KC_K,    KC_H, KC_COMM,  KC_DOT, KC_SLSH,  KC_ESC,
+     TD(TD_ESC_CAPS),    KC_Z,    KC_X,    KC_C,    KC_D,    TD(DANCE_V),                         KC_K,    KC_H, KC_COMM,  KC_DOT, KC_SLSH,  KC_ESC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LGUI, MO(1),TD(TD_SPACE),     KC_ENT, MO(2), KC_BSPC
+                                          OSM(MOD_LGUI), OSL(1),TD(TD_SPACE),     KC_ENT, OSL(2), KC_BSPC
                                       //`--------------------------'  `--------------------------'
 
   ),
@@ -67,7 +137,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_TRNS, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_HOME, KC_PGDN, KC_PGUP, KC_END, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LGUI, KC_TRNS,  KC_SPC,     KC_ENT,  MO(3), KC_RALT
+                                          KC_TRNS, KC_TRNS,  KC_SPC,     KC_ENT,  MO(3), KC_RALT
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -79,19 +149,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_TRNS, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_UNDS, KC_PLUS, KC_LBRC, KC_RBRC, KC_PIPE, KC_TILD,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LGUI, MO(3),  KC_SPC,     KC_ENT, KC_TRNS, KC_RALT
+                                          KC_TRNS, MO(3),  KC_SPC,     KC_ENT, KC_TRNS, KC_RALT
                                       //`--------------------------'  `--------------------------'
   ),
 
   [3] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-        QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+        QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, KC_SCROLL_LOCK, KC_PAUS, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      RGB_TOG, RGB_HUI, RGB_SAI, RGB_VAI, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+      RGB_TOG, RGB_HUI, RGB_SAI, RGB_VAI, XXXXXXX, XXXXXXX,                      KC_MUTE, KC_VOLD, KC_VOLU, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       RGB_MOD, RGB_HUD, RGB_SAD, RGB_VAD, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LGUI, _______,  KC_SPC,     KC_ENT, _______, KC_RALT
+                                          KC_TRNS, _______,  KC_SPC,     KC_ENT, _______, KC_RALT
                                       //`--------------------------'  `--------------------------'
   )
 };

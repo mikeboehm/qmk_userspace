@@ -21,6 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #undef TAPPING_TERM
 #define TAPPING_TERM 264
 
+#define PERMISSIVE_HOLD
+
+// https://docs.qmk.fm/tap_hold#quick-tap-term
+#define QUICK_TAP_TERM 120
+// https://docs.qmk.fm/tap_hold#retro-tapping
+#define RETRO_TAPPING
+
 
 /* Select hand configuration */
 
