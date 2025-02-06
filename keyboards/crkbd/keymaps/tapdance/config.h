@@ -22,16 +22,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_TERM 264
 
 #define PERMISSIVE_HOLD
+// tried this to avoid having to pull out the cord all the time
+// #define NO_USB_STARTUP_CHECK
 
 // https://docs.qmk.fm/tap_hold#quick-tap-term
 #define QUICK_TAP_TERM 120
 // https://docs.qmk.fm/tap_hold#retro-tapping
-#define RETRO_TAPPING
+// #define RETRO_TAPPING
 
 
 /* Select hand configuration */
 
+// #undef SPLIT_USB_DETECT
 // #define MASTER_LEFT
+
 #define SPLIT_USB_DETECT
 // #define MASTER_RIGHT
 // #define EE_HANDS
